@@ -1,9 +1,17 @@
-# MySQL Database Synchronizer
+# MySQL Database Synchronizer v2.0
 
-A modern Python GUI application for synchronizing MySQL databases between a master and multiple slave instances. The application features schema validation, real-time progress tracking, and a clean, modern user interface.
+A modern Python GUI application for synchronizing databases between a master and multiple slave instances. **Now supports MySQL, PostgreSQL, and Microsoft SQL Server** with intelligent cross-database schema translation. Features schema validation, real-time progress tracking, and a clean, modern user interface.
 
 ## Features
 
+### 🆕 Version 2.0 - Multi-Database Support
+- **🔄 Cross-Database Synchronization**: Sync between MySQL, PostgreSQL, and Microsoft SQL Server
+- **🧠 Intelligent Schema Translation**: Automatic data type conversion between database systems
+- **🛠️ Enhanced Table Creation**: Improved handling of complex default values and constraints
+- **⚡ Robust Error Handling**: Better error recovery and detailed logging for troubleshooting
+- **🔧 Schema Compatibility Fixes**: Resolves issues with quoted defaults and function calls
+
+### Core Features
 - **🔒 MASTER DATABASE PROTECTION**: Multiple security layers ensure master database is **NEVER modified**
 - **Modern GUI**: Built with CustomTkinter for a sleek, modern interface
 - **Master-Slave Configuration**: Easy setup for one master and multiple slave databases
@@ -21,8 +29,16 @@ A modern Python GUI application for synchronizing MySQL databases between a mast
 ## Requirements
 
 - Python 3.7 or higher
-- MySQL databases (master and slave instances)
+- **Supported Databases**:
+  - **MySQL** (master and/or slave instances)
+  - **PostgreSQL** (master and/or slave instances)
+  - **Microsoft SQL Server** (master and/or slave instances)
 - Required Python packages (see requirements.txt)
+
+### Database Driver Requirements
+- **MySQL**: `mysql-connector-python`
+- **PostgreSQL**: `psycopg2`
+- **SQL Server**: `pyodbc` (requires ODBC driver)
 
 ## Installation
 
@@ -61,11 +77,20 @@ A modern Python GUI application for synchronizing MySQL databases between a mast
 ### 2. Add Slave Databases
 
 1. In the "Configuration" tab, click "Add Slave"
-2. Enter slave database credentials:
+2. **Select Database Type**: Choose from MySQL, PostgreSQL, or SQL Server
+3. Enter slave database credentials:
    - Name (unique identifier for this slave)
    - Host, Port, Username, Password, Database
-3. Test the connection and save
-4. Repeat for additional slave databases
+   - **Database Type**: MySQL, PostgreSQL, or SQL Server
+4. Test the connection and save
+5. Repeat for additional slave databases
+
+### 🆕 Cross-Database Synchronization
+You can now sync between different database types:
+- **MySQL → PostgreSQL**: Automatic schema translation and data type conversion
+- **MySQL → SQL Server**: Intelligent type mapping and constraint handling
+- **PostgreSQL → MySQL**: Reverse compatibility with proper type conversion
+- **Any combination**: Full support for mixed database environments
 
 ### 3. Start Synchronization
 
@@ -86,16 +111,28 @@ The synchronization process includes:
 
 ## How It Works
 
-### Schema Validation (Flexible Approach)
-- **Missing = CRITICAL**: Slave databases MUST have all master tables and columns
-- **Extra = INFO**: Slave databases CAN have additional tables and columns (ignored during sync)
-- **Data Type Compatibility**: Critical data type mismatches prevent synchronization
+### 🆕 Cross-Database Schema Translation (v2.0)
+- **Intelligent Type Mapping**: Automatic conversion between MySQL, PostgreSQL, and SQL Server data types
+- **Default Value Translation**: Proper handling of database-specific default values and functions
+- **Constraint Conversion**: Automatic translation of primary keys, foreign keys, and indexes
+- **Function Mapping**: Converts database-specific functions (e.g., `current_timestamp()` → `current_timestamp`)
+- **Compatibility Validation**: Pre-sync validation ensures successful schema translation
+- **Error Recovery**: Robust error handling for complex schema translation scenarios
+
+### Schema Validation & Auto-Creation
+- **🆕 Automatic Table Creation**: Missing tables in slaves are created automatically with proper schema translation
+- **Missing Tables = AUTO-FIX**: App creates missing tables using translated master schema
+- **Missing Columns = CRITICAL**: Column differences require manual schema updates
+- **Extra Content = INFO**: Slave databases CAN have additional tables/columns (ignored)
+- **Data Type Compatibility**: Automatic type conversion between different database systems
 - **Primary Key Validation**: Ensures primary keys exist for synchronization logic
 - **Smart Sync**: Only syncs master columns, ignores extra slave columns
 - **User Choice**: When issues found, user can Skip problem slaves or Force sync
 - **Detailed Reports**: Clear explanation of what each issue means
 
 ### Record Synchronization
+- **🆕 Works with Empty Databases**: Can sync to completely empty slave databases
+- **Automatic Table Creation**: Creates missing tables before data sync
 - Uses primary keys to identify existing records
 - Only inserts records that don't exist in slave databases
 - Processes records in batches for optimal performance
@@ -106,13 +143,31 @@ The synchronization process includes:
 
 | Scenario | Result | Action |
 |----------|--------|--------|
-| Slave missing master table | ❌ **ERROR** | Sync blocked - slave must have all master tables |
+| Slave missing master table | 🔧 **AUTO-FIX** | Table created automatically using translated schema |
 | Slave has extra table | ✅ **OK** | Extra table ignored during sync |
-| Slave missing master column | ❌ **ERROR** | Sync blocked - slave must have all master columns |
+| Slave missing master column | ❌ **ERROR** | Sync blocked - requires manual schema update |
 | Slave has extra column | ✅ **OK** | Extra column ignored during sync |
-| Data type mismatch | ❌ **ERROR** | Sync blocked - data types must be compatible |
+| Cross-database type conversion | 🔧 **AUTO-CONVERT** | Types automatically converted (e.g., MySQL INT → PostgreSQL INTEGER) |
 | Missing primary key in slave | ❌ **ERROR** | Sync blocked - primary keys required for sync logic |
 | Extra constraints in slave | ✅ **OK** | Additional constraints are fine |
+| Empty slave database | 🔧 **AUTO-FIX** | All master tables created automatically with proper translation |
+| Different database systems | 🔧 **AUTO-TRANSLATE** | Full schema translation between MySQL, PostgreSQL, SQL Server |
+
+### 🆕 Cross-Database Type Mappings (v2.0)
+
+#### MySQL → PostgreSQL
+- `INT` → `INTEGER`, `VARCHAR(n)` → `VARCHAR(n)`, `TEXT` → `TEXT`
+- `DATETIME` → `TIMESTAMP`, `TINYINT(1)` → `BOOLEAN`
+- `AUTO_INCREMENT` → `SERIAL`, `LONGTEXT` → `TEXT`
+
+#### MySQL → SQL Server
+- `INT` → `INT`, `VARCHAR(n)` → `NVARCHAR(n)`, `TEXT` → `NTEXT`
+- `DATETIME` → `DATETIME2`, `TINYINT(1)` → `BIT`
+- `AUTO_INCREMENT` → `IDENTITY(1,1)`, `LONGTEXT` → `NTEXT`
+
+#### PostgreSQL → MySQL
+- `SERIAL` → `INT AUTO_INCREMENT`, `BOOLEAN` → `TINYINT(1)`
+- `TIMESTAMP` → `DATETIME`, `TEXT` → `LONGTEXT`
 
 ### 🔒 Security & Safety Features
 - **GUARANTEED READ-ONLY MASTER**: Multiple security layers prevent any master database modifications
@@ -137,18 +192,27 @@ The application creates the following files:
 1. **Connection Failed**:
    - Verify database credentials
    - Check network connectivity
-   - Ensure MySQL server is running
+   - Ensure database server is running (MySQL/PostgreSQL/SQL Server)
    - Verify firewall settings
+   - **SQL Server**: Ensure ODBC driver is installed
 
 2. **Schema Validation Failed**:
    - Review schema differences in the log
-   - Ensure slave databases have the same structure as master
+   - **Cross-database**: Check type conversion compatibility
    - Check for missing tables or columns
+   - **v2.0 Fix**: Improved handling of quoted defaults and function calls
 
 3. **Synchronization Errors**:
    - Check database permissions (INSERT privileges required on slaves)
    - Verify primary key constraints
    - Review error logs for specific issues
+   - **Cross-database**: Ensure target database supports converted data types
+
+4. **🆕 Table Creation Issues (Fixed in v2.0)**:
+   - **Previous Issue**: Tables failing due to quoted NULL defaults (`'NULL'`)
+   - **Previous Issue**: Function calls in quotes (`'current_timestamp()'`)
+   - **Previous Issue**: Double-quoted string values (`''0''`)
+   - **✅ Fixed**: All schema translation issues resolved in v2.0
 
 ### 🚀 Performance for Large Databases
 
@@ -184,9 +248,51 @@ The application is optimized to handle large databases efficiently:
 
 **See [SECURITY.md](SECURITY.md) for complete security documentation.**
 
+### 🆕 New Components in v2.0
+- **schema_translator.py**: Handles cross-database schema translation
+- **cross_db_converter.py**: Manages data type conversions between database systems
+- **postgresql_manager.py**: PostgreSQL-specific database operations
+- **sqlserver_manager.py**: SQL Server-specific database operations
+- **database_factory.py**: Factory pattern for database manager selection
+
+## 📋 Changelog
+
+### Version 2.0 (Latest)
+**🚀 Major Release: Multi-Database Support**
+
+#### ✨ New Features
+- **Cross-Database Synchronization**: Full support for MySQL, PostgreSQL, and Microsoft SQL Server
+- **Intelligent Schema Translation**: Automatic data type conversion between database systems
+- **Enhanced Table Creation**: Improved handling of complex default values and constraints
+- **Robust Error Handling**: Better error recovery and detailed logging
+
+#### 🐛 Bug Fixes
+- **Fixed**: Table creation failures due to quoted NULL defaults (`'NULL'` → proper handling)
+- **Fixed**: Function calls in quotes (`'current_timestamp()'` → `current_timestamp`)
+- **Fixed**: Double-quoted string values (`''0''` → `'0'`)
+- **Fixed**: Tuple index out of range errors in primary key detection
+- **Fixed**: Schema format validation issues
+
+#### 🔧 Improvements
+- **Enhanced**: Error handling with better exception management
+- **Enhanced**: Schema validation with cross-database compatibility checks
+- **Enhanced**: Logging with more detailed error information
+- **Enhanced**: UI responsiveness at 200% zoom scale
+
+#### 📊 Performance
+- **Resolved**: Issue where only 158/269 tables were created (now creates all tables successfully)
+- **Improved**: Schema translation performance for large databases
+- **Optimized**: Memory usage during cross-database operations
+
+### Version 1.0
+- Initial release with MySQL-to-MySQL synchronization
+- Basic schema validation and table creation
+- GUI interface with progress tracking
+- Master database protection features
+
 ## 💝 Created with Love
 
-**MySQL Database Synchronizer** is created with ❤️ by **TweekersNut Network**
+**Database Synchronizer v2.0** is created with ❤️ by **TweekersNut Network**
 
 - **Contact**: admin@tweekersnut.com
 - **Website**: https://tweekersnut.com
